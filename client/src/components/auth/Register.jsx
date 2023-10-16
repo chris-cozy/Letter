@@ -1,13 +1,17 @@
-import { useState } from "react"
+import { useContext, useState } from "react"
+import axios from "axios"
+import { UserContext } from "../UserContext";
 
 
 export default function Register() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-
+    const {setUsername:setContextUsername, setId} = useContext(UserContext); 
     async function register(ev) {
         ev.preventDefault();
         const {data} = await axios.post("/v1/auth/register", {username, password});
+        setContextUsername(username);
+        setId(data._id)
     }
 
     return (

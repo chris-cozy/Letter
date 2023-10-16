@@ -1,4 +1,5 @@
-import Register from "./components/auth/Register";
+import {UserContextProvider } from "./components/UserContext";
+import Routes from "./Routes";
 import axios from "axios"
 
 
@@ -7,7 +8,9 @@ function App() {
   axios.defaults.withCredentials = true;
   return (
     <>
-      <Register />
+      <UserContextProvider>
+        <Routes />
+      </UserContextProvider>
     </>
   )
 }
