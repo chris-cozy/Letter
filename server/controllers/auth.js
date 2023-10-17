@@ -1,14 +1,18 @@
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 async function registerUser(req, res) {
   console.log(req.body);
   try {
     const { username, password } = req.body;
 
+    const salt = await bcrypt.genSalt();
+    const passwordHash = await bcrypt.hash(password, salt);
+
     const newUser = new User({
       username,
-      password,
+      password: passwordHash,
     });
 
     const savedUser = await newUser.save();
@@ -34,8 +38,21 @@ async function loginUser(req, res) {
     const user = await User.find({ username });
 
     if (!user) {
-      res.status(404).json({ message: "No user with that username." });
+      return res.status(400).json({ message: "No user with that username." });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials." });
+    }
+    const token = jwt.sign({ id: user._id, username }, process.env.JWT_SECRET);
+    delete user.password;
+
+    res
+      .cookie("token", token, { sameSite: "none", secure: true })
+      .status(200)
+      .json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
