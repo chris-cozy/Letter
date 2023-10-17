@@ -35,7 +35,7 @@ async function registerUser(req, res) {
 async function loginUser(req, res) {
   try {
     const { username, password } = req.body;
-    const user = await User.find({ username });
+    const user = await User.findOne({ username });
 
     if (!user) {
       return res.status(400).json({ message: "No user with that username." });
