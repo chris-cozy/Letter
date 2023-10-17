@@ -15,6 +15,7 @@ async function registerUser(req, res) {
     });
 
     const savedUser = await newUser.save();
+    console.log(savedUser);
 
     // Sign in with JWT on register
     const token = jwt.sign(

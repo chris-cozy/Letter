@@ -32,13 +32,32 @@ wsServer.on("connection", (connection, req) => {
     if (parsedMessage.type === "auth") {
       const token = parsedMessage.token;
       console.log(token);
-      // Validate and process the authentication token
-      // ...
-      // Respond back to the client if needed
-      connection.send("Token received and validated");
+
+      jwt.verify(token, process.env.JWT_SECRET, {}, (err, user) => {
+        if (err) {
+          console.error(err);
+        }
+        const { id, username } = user;
+        connection.id = id;
+        connection.username = username;
+        //connection.send("Token received and validated");
+      });
     } else if (parsedMessage.type === "data") {
       // Handle other types of messages (if applicable)
       // ...
     }
+  });
+
+  // Send list of active clients
+  console.log([...wsServer.clients].map((c) => c.username));
+  [...wsServer.clients].forEach((client) => {
+    client.send(
+      JSON.stringify({
+        online: [...wsServer.clients].map((c) => ({
+          id: c.id,
+          username: c.username,
+        })),
+      })
+    );
   });
 });

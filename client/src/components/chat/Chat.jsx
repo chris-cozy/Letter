@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 
 export default function Chat() {
     const [ws, setWs] = useState(null);
+    const [onlineUsers, setOnlineUsers] = useState([]);
 
     useEffect(() => {
     
@@ -30,7 +31,23 @@ export default function Chat() {
     }, []) //eslint-disable-line react-hooks/exhaustive-deps
 
     function handleMessage(event) {
-        console.log("Message from server: ", event.data);
+        const messageData = JSON.parse(event.data);
+        if ('online' in messageData){
+            showOnlineUsers(messageData.online)
+        }
+    
+    }
+
+    function showOnlineUsers(users){
+        // Clear duplicates
+        const uniqueUsers = {};
+        users.forEach(({id, username}) => {
+            if (id){
+                uniqueUsers[id] = username;
+            }
+        });
+        console.log(uniqueUsers)
+        setOnlineUsers(uniqueUsers);
     }
 
     
@@ -38,8 +55,20 @@ export default function Chat() {
     return (
         <>
             <div className="flex h-screen">
-                <div className="bg-blue-100 w-1/3">
-                    Existing Chats
+                <div className="bg-blue-50 w-1/3 pl-4 pt-4">
+                    <div className="text-blue-600 font-bold border-b py-2 flex gap-2 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                    <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
+                    <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
+                    </svg>
+
+                        Letter
+                    </div>
+                    {Object.keys(onlineUsers).map((id) => (
+                        <div className="border-b py-2">
+                            {onlineUsers[id]}
+                        </div>
+                    ))}
                 </div>
                 <div className="flex flex-col bg-blue-300 w-2/3 p-4">
                     <div className="flex-grow">Messages with selected user</div>
