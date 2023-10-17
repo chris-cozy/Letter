@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
 async function registerUser(req, res) {
-  console.log(req.body);
   try {
     const { username, password } = req.body;
 
@@ -20,13 +19,13 @@ async function registerUser(req, res) {
     // Sign in with JWT on register
     const token = jwt.sign(
       { id: savedUser._id, username },
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "2hr",
+      }
     );
 
-    res
-      .cookie("token", token, { sameSite: "none", secure: true })
-      .status(201)
-      .json(savedUser);
+    res.status(201).json(token);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
