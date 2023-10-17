@@ -7,9 +7,9 @@ import { UserContext } from "./components/UserContext";
 
 export default function Routes() {
 
-    const {username, id} = useContext(UserContext);
+    const {user} = useContext(UserContext);
 
-    if (!username) {
+    if (!user) {
         return <Authentication />
     }
     

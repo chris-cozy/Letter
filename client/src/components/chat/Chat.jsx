@@ -1,6 +1,39 @@
+import { useEffect, useState } from "react"
 
 
 export default function Chat() {
+    const [ws, setWs] = useState(null);
+
+    useEffect(() => {
+    
+        const socket = new WebSocket('ws://127.0.0.1:4040')
+        setWs(socket);
+
+        const token = localStorage.getItem('token');
+
+        socket.onopen = (event) => {
+            // Send the JWT token to the server after the WebSocket connection is established
+            const authMessage = {
+                type: 'auth',
+                token: token,
+            };
+              
+            socket.send(JSON.stringify(authMessage));
+          };
+
+        socket.addEventListener('message', handleMessage)
+
+        socket.onerror = (error) => {
+            console.error('WebSocket Error: ', error);
+          };
+          
+    }, []) //eslint-disable-line react-hooks/exhaustive-deps
+
+    function handleMessage(event) {
+        console.log("Message from server: ", event.data);
+    }
+
+    
 
     return (
         <>

@@ -46,13 +46,12 @@ async function loginUser(req, res) {
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials." });
     }
-    const token = jwt.sign({ id: user._id, username }, process.env.JWT_SECRET);
+    const token = jwt.sign({ id: user._id, username }, process.env.JWT_SECRET, {
+      expiresIn: "2hr",
+    });
     delete user.password;
 
-    res
-      .cookie("token", token, { sameSite: "none", secure: true })
-      .status(200)
-      .json(user);
+    res.status(200).json(token);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -60,15 +59,15 @@ async function loginUser(req, res) {
 
 async function getProfile(req, res) {
   try {
-    const token = req.cookies?.token;
+    const username = req.user.username;
 
-    if (!token) {
-      res.status(401).json({ message: "Unauthorized, no token presented" });
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(400).json({ message: "No user with that username." });
     }
 
-    const verifiedUser = jwt.verify(token, process.env.JWT_SECRET);
-
-    res.status(200).json(verifiedUser);
+    res.status(200).json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

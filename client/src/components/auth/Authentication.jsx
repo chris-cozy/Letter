@@ -7,15 +7,15 @@ export default function Authentication() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLogin, setIsLogin] = useState(true);
-    const {setUsername:setContextUsername, setId} = useContext(UserContext); 
+    const {setUser} = useContext(UserContext); 
 
 
     async function handleSubmit(ev) {
         const endpoint = isLogin ? '/v1/auth/login' : '/v1/auth/register'
         ev.preventDefault();
         const {data} = await axios.post(endpoint, {username, password});
-        setContextUsername(username);
-        setId(data._id)
+        console.log(data)
+        localStorage.setItem('token', data);
     }
 
     return (
