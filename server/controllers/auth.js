@@ -28,6 +28,19 @@ async function registerUser(req, res) {
   }
 }
 
+async function loginUser(req, res) {
+  try {
+    const { username, password } = req.body;
+    const user = await User.find({ username });
+
+    if (!user) {
+      res.status(404).json({ message: "No user with that username." });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 async function getProfile(req, res) {
   try {
     const token = req.cookies?.token;
@@ -47,4 +60,5 @@ async function getProfile(req, res) {
 module.exports = {
   registerUser,
   getProfile,
+  loginUser,
 };

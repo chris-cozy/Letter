@@ -9,7 +9,8 @@ export function UserContextProvider({children}) {
 
     useEffect(() => {
         axios.get('/v1/auth/profile').then(res => {
-            console.log(res.data);
+            setId(res.data.id);
+            setUsername(res.data.username);
         })
     }, []) //eslint-disable-line react-hooks/exhaustive-deps
 
