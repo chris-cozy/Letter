@@ -40,6 +40,7 @@ wsServer.on("connection", (connection, req) => {
         const { id, username } = user;
         connection.id = id;
         connection.username = username;
+        console.log(username);
         //connection.send("Token received and validated");
       });
     } else if (parsedMessage.type === "data") {

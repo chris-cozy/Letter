@@ -1,9 +1,16 @@
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
+import Avatar from "./Avatar";
+import Logo from "./Logo"
+import { UserContext } from "../UserContext";
 
 
 export default function Chat() {
     const [ws, setWs] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [messageText, setMessageText] = useState('');
+    const context = useContext(UserContext);
+    const currentId = context.user._id
 
     useEffect(() => {
     
@@ -42,7 +49,7 @@ export default function Chat() {
         // Clear duplicates
         const uniqueUsers = {};
         users.forEach(({id, username}) => {
-            if (id){
+            if (id && id != currentId){
                 uniqueUsers[id] = username;
             }
         });
@@ -50,36 +57,43 @@ export default function Chat() {
         setOnlineUsers(uniqueUsers);
     }
 
-    
-
     return (
         <>
             <div className="flex h-screen">
-                <div className="bg-blue-50 w-1/3 pl-4 pt-4">
-                    <div className="text-blue-600 font-bold border-b py-2 flex gap-2 mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                    <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
-                    <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
-                    </svg>
-
-                        Letter
-                    </div>
+                {/** CONTACTS */}
+                <div className="bg-blue-50 w-1/3">
+                    <Logo />
                     {Object.keys(onlineUsers).map((id) => (
-                        <div className="border-b py-2">
-                            {onlineUsers[id]}
+                        <div key={id} className={"flex border-b cursor-pointer " + (id === selectedUser ? 'bg-blue-200 font-semibold' : '')} onClick={() => setSelectedUser(id)}>
+                            {id === selectedUser && (
+                                <div className="w-1 bg-blue-500 h-half rounded-r-lg"></div>
+                            )}
+                            <div className="pl-4 py-2 flex gap-2 items-center">
+                                <Avatar username={onlineUsers[id]} id={id}/>
+                                <span className="text-md text-gray-800">{onlineUsers[id]}</span>
+                            </div>
+                            
                         </div>
                     ))}
                 </div>
-                <div className="flex flex-col bg-blue-300 w-2/3 p-4">
-                    <div className="flex-grow">Messages with selected user</div>
-                    <div className="flex gap-2">
-                        <input type="text" placeholder="Write a message..." className="bg-white border p-2 rounded-lg flex-grow"/>
-                        <button className="bg-blue-500 p-2 text-white rounded-lg">
+                {/** MESSAGES */}
+                <div className="flex flex-col bg-blue-200 w-2/3 p-4">
+                    <div className="flex-grow">
+                        {!selectedUser && (
+                            <div className="flex h-full items-center justify-center">
+                                <div className="text-gray-500">Select a user to chat</div>
+                            </div>
+                        )}
+                    </div>
+                    {/** MESSAGE SENDING */}
+                    <form className="flex gap-2" onSubmit={null}>
+                        <input type="text" placeholder="Write a message..." className="bg-white border p-2 rounded-lg flex-grow" value={messageText} onChange={ev => setMessageText(ev.target.value)}/>
+                        <button type='submit' className="bg-blue-500 p-2 text-white rounded-lg">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                             </svg>
                         </button>
-                    </div>
+                    </form>
                 </div>
             </div>
         </>
