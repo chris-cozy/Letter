@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useRef, useState } from "react"
 import Avatar from "./Avatar";
 import Logo from "./Logo"
 import { UserContext } from "../UserContext";
@@ -13,6 +13,13 @@ export default function Chat() {
     const context = useContext(UserContext);
     const currentId = context.user._id
     const uniqueMessageIds = new Set();
+
+    const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        // Scroll to the bottom of the message container when messages change
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]); // Trigger effect whenever messages change
 
     useEffect(() => {
     
@@ -113,17 +120,20 @@ export default function Chat() {
                             </div>
                         )}
                         {!!selectedUser && (
-                            <div className="flex flex-col items-end overflow-y-scroll">
-                                {messages.map((message, index) => (
+                            <div className="relative h-full">
+                                <div className="flex flex-col items-end overflow-y-scroll absolute inset-0">
+                                    {messages.map((message, index) => (
 
-                                    <div key={index} className={`p-2 rounded-lg max-w-md ${
-                                        message.messageData.message.sender === currentId
-                                            ? 'bg-blue-500 text-white self-end'
-                                            : 'bg-gray-200 text-gray-700 self-start'
-                                    } mb-2`}>
-                                        {message.messageData.message.text}
-                                    </div>
-                                ))}
+                                        <div key={index} className={`p-2 rounded-lg max-w-sm ${
+                                            message.messageData.message.sender === currentId
+                                                ? 'bg-blue-500 text-white self-end'
+                                                : 'bg-gray-200 text-gray-700 self-start'
+                                        } mb-2`}>
+                                            {message.messageData.message.text}
+                                        </div>
+                                    ))}
+                                    <div ref={messagesEndRef} />
+                                 </div>
                             </div>
                         )}
                     </div>
