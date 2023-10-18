@@ -11,7 +11,7 @@ async function getMessages(req, res) {
         { $and: [{ sender: mainId }, { recipient: secondaryId }] },
         { $and: [{ sender: secondaryId }, { recipient: mainId }] },
       ],
-    }).sort({ createdAt: -1 }); // Sort messages by createdAt in ascending order
+    }).sort({ createdAt: 1 }); // Sort messages by createdAt in ascending order
 
     res.status(200).json(messages);
   } catch (err) {

@@ -19,7 +19,16 @@ export default function Chat() {
 
     useEffect(() => {
         if (selectedUser){
-            axios.get(`/v1/messages/${currentId}/${selectedUser}`).then(res => console.log(res.data))
+            axios.get(`/v1/messages/${currentId}/${selectedUser}`).then((res) => {
+                const messages = res.data;
+                messages.forEach((message) => {
+                    const prevMessage = {
+                        type: 'message',
+                        message: message,
+                    }
+                    setMessages(prev => ([...prev, {messageData: prevMessage}]))
+                })
+            } )
         }
 
     }, [selectedUser])
