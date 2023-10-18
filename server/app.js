@@ -41,15 +41,14 @@ wsServer.on("connection", (connection, req) => {
         connection.id = id;
         connection.username = username;
         console.log(username);
-        //connection.send("Token received and validated");
       });
     } else if (parsedMessage.type === "data") {
-      // Handle other types of messages (if applicable)
-      // ...
+      const message = parsedMessage.message;
+      console.log(message);
     }
   });
 
-  // Send list of active clients
+  // Send list of active clients upon connect
   console.log([...wsServer.clients].map((c) => c.username));
   [...wsServer.clients].forEach((client) => {
     client.send(
