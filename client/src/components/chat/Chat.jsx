@@ -9,8 +9,10 @@ export default function Chat() {
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
     const [messageText, setMessageText] = useState('');
+    const [messages, setMessages] = useState([])
     const context = useContext(UserContext);
     const currentId = context.user._id
+    const uniqueMessageIds = new Set();
 
     useEffect(() => {
     
@@ -39,8 +41,18 @@ export default function Chat() {
 
     function handleMessage(event) {
         const messageData = JSON.parse(event.data);
-        if ('online' in messageData){
-            showOnlineUsers(messageData.online)
+        console.log(messageData);
+        if (messageData.type == 'online'){
+            showOnlineUsers(messageData.online);
+        }
+        if (messageData.type == 'message') {
+            if (!uniqueMessageIds.has(messageData.messageId)){
+                setMessages(prev => ([...prev, {messageData: messageData}]));
+                uniqueMessageIds.add(messageData.messageId);
+            } else {
+                console.log('Duplicate message ID found. Message ignored.');
+            }
+            
         }
     
     }
@@ -53,21 +65,24 @@ export default function Chat() {
                 uniqueUsers[id] = username;
             }
         });
-        console.log(uniqueUsers)
         setOnlineUsers(uniqueUsers);
     }
 
     function sendMessage(ev) {
         ev.preventDefault();
         const userMessage = {
-            type: 'data',
+            type: 'message',
             message: {
+                sender: currentId,
                 recipient: selectedUser,
                 text: messageText,
             },
         };
           
         ws.send(JSON.stringify(userMessage))
+        setMessages(prev => ([...prev, {messageData: userMessage}]))
+        setMessageText('');
+        
     }
 
     return (
@@ -94,7 +109,21 @@ export default function Chat() {
                     <div className="flex-grow">
                         {!selectedUser && (
                             <div className="flex h-full items-center justify-center">
-                                <div className="text-gray-500">Select a user to chat</div>
+                                <div className="text-gray-500">Select a user to start messaging</div>
+                            </div>
+                        )}
+                        {!!selectedUser && (
+                            <div className="flex flex-col items-end overflow-y-scroll">
+                                {messages.map((message, index) => (
+
+                                    <div key={index} className={`p-2 rounded-lg max-w-md ${
+                                        message.messageData.message.sender === currentId
+                                            ? 'bg-blue-500 text-white self-end'
+                                            : 'bg-gray-200 text-gray-700 self-start'
+                                    } mb-2`}>
+                                        {message.messageData.message.text}
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>

@@ -3,6 +3,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const ws = require("ws");
 const jwt = require("jsonwebtoken");
+const Message = require("./models/Message");
 
 require("dotenv").config();
 
@@ -27,7 +28,7 @@ const wsServer = new ws.WebSocketServer({ server });
 wsServer.on("connection", (connection, req) => {
   console.log("Web socket server connected.");
 
-  connection.on("message", (message) => {
+  connection.on("message", async (message) => {
     const parsedMessage = JSON.parse(message.toString());
     if (parsedMessage.type === "auth") {
       const token = parsedMessage.token;
@@ -42,9 +43,26 @@ wsServer.on("connection", (connection, req) => {
         connection.username = username;
         console.log(username);
       });
-    } else if (parsedMessage.type === "data") {
-      const message = parsedMessage.message;
-      console.log(message);
+    } else if (parsedMessage.type === "message") {
+      // Save message to database
+      const { sender, recipient, text } = parsedMessage.message;
+      const newMessage = new Message({
+        sender,
+        recipient,
+        text,
+      });
+
+      const savedMessage = await newMessage.save();
+
+      const toClient = {
+        type: parsedMessage.type,
+        messageId: savedMessage._id,
+        message: parsedMessage.message,
+      };
+
+      [...wsServer.clients]
+        .filter((c) => c.id === parsedMessage.message.recipient)
+        .forEach((c) => c.send(JSON.stringify(toClient)));
     }
   });
 
@@ -53,6 +71,7 @@ wsServer.on("connection", (connection, req) => {
   [...wsServer.clients].forEach((client) => {
     client.send(
       JSON.stringify({
+        type: "online",
         online: [...wsServer.clients].map((c) => ({
           id: c.id,
           username: c.username,
