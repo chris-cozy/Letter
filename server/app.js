@@ -13,8 +13,10 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(cookieParser());
 
 const authRoutes = require("./routes/auth");
+const messagesRoutes = require("./routes/messages");
 
 app.use("/v1/auth", authRoutes);
+app.use("/v1/messages", messagesRoutes);
 
 const PORT = process.env.PORT || 3000;
 
@@ -22,7 +24,7 @@ const server = app.listen(PORT, () => {
   console.log(`Message server running on port ${PORT}`);
 });
 
-// Websocket server
+/** WEBSOCKET SERVER */
 const wsServer = new ws.WebSocketServer({ server });
 
 wsServer.on("connection", (connection, req) => {
