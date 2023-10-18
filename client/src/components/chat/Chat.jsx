@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react"
 import Avatar from "./Avatar";
 import Logo from "./Logo"
 import { UserContext } from "../UserContext";
+import axios from 'axios';
 
 
 export default function Chat() {
@@ -15,6 +16,13 @@ export default function Chat() {
     const uniqueMessageIds = new Set();
 
     const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        if (selectedUser){
+            axios.get(`/v1/messages/${currentId}/${selectedUser}`).then(res => console.log(res.data))
+        }
+
+    }, [selectedUser])
 
     useEffect(() => {
         // Scroll to the bottom of the message container when messages change
