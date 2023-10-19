@@ -16,12 +16,6 @@ export function UserContextProvider({children}) {
         } else {
             delete axios.defaults.headers.common['Authorization'];
         }
-
-
-        axios.get('/v1/auth/profile').then(res => {
-            setUser(res.data)
-            console.log(res.data)
-        })
     }, []) //eslint-disable-line react-hooks/exhaustive-deps
 
     return (

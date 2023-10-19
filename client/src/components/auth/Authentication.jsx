@@ -16,6 +16,10 @@ export default function Authentication() {
         const {data} = await axios.post(endpoint, {username, password});
         console.log(data)
         localStorage.setItem('token', data);
+        await axios.get('/v1/auth/profile').then(res => {
+            setUser(res.data)
+            console.log(res.data)
+        })
     }
 
     return (
