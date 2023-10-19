@@ -2,8 +2,10 @@ import { useContext, useEffect, useRef, useState } from "react"
 import User from "./User";
 import Logo from "./Logo";
 import Form from "./Form";
+import SideBar from "./SideBar";
 import { UserContext } from "../UserContext";
 import axios from 'axios';
+import MessageHistory from "./MessageHistory";
 
 
 export default function Chat() {
@@ -14,11 +16,17 @@ export default function Chat() {
     const [messageText, setMessageText] = useState('');
     const [messages, setMessages] = useState([])
     const context = useContext(UserContext);
-    console.log(context.user)
     const currentId = context.user._id
-    
-
+    const token = localStorage.getItem('token');
     const messagesEndRef = useRef(null);
+
+    /** USE EFFECTS */
+
+    useEffect(() => {
+        if(messages.length > 0){
+            scrollToCurrent();
+        }
+    }, [messages]);
 
     useEffect(() => {
         setMessages([])
@@ -35,21 +43,18 @@ export default function Chat() {
             } )
         }
 
-    }, [selectedUser])
 
-    useEffect(() => {
-        
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]); // Trigger effect whenever messages change
-
-    useEffect(() => {
-        connectWebSocket();
-    }, [selectedUser]) //eslint-disable-line react-hooks/exhaustive-deps
+        // If user logged in and selects a user, connect web socket
+        if(token){
+            connectWebSocket(token);
+        }else{
+            logout();
+        }
+    }, [selectedUser, token]) //eslint-disable-line react-hooks/exhaustive-deps
 
     // Handle online/offline users
     useEffect(() => {
         axios.get('/v1/user').then((res) => {
-            // Filter to only offline users
             const offlineUsers = res.data.filter(user => user._id !== currentId).filter(user => !Object.keys(onlineUsers).includes(user._id))
             const formattedUsers = {}
             offlineUsers.forEach((user) => {
@@ -59,21 +64,14 @@ export default function Chat() {
         })
     }, [onlineUsers])
 
-    function connectWebSocket(){
 
-        const token = localStorage.getItem('token');
+    /** HELPER FUNCTIONS */
 
-        if (!token){
-            return;
-        }
-
+    function connectWebSocket(token){
         const socket = new WebSocket('ws://127.0.0.1:4040')
         setWs(socket);
 
-        
-
         socket.onopen = (event) => {
-            // Send the JWT token to the server after the WebSocket connection is established
             const authMessage = {
                 type: 'auth',
                 token: token,
@@ -87,11 +85,8 @@ export default function Chat() {
 
         // Auto reconnect to socket once it disconnects
         socket.addEventListener('close', () => {
-            if (token) {
-                console.log("Disconnected. Trying to reconnect...");
-                setTimeout(() => {connectWebSocket()}, 1000)
-            }
-            
+            console.log("Disconnected. Trying to reconnect...");
+            setTimeout(() => {connectWebSocket()}, 1000)
         })
 
         socket.onerror = (error) => {
@@ -100,11 +95,14 @@ export default function Chat() {
     }
 
     const uniqueMessageIds = new Set();
+
     function handleMessage(event) {
         const messageData = JSON.parse(event.data);
         if (messageData.type === 'online'){
+
             showOnlineUsers(messageData.online);
         } else if (messageData.type === 'message') {
+
             console.log(messageData.message.sender === selectedUser)
 
             if (messageData.message.sender === selectedUser){
@@ -116,29 +114,26 @@ export default function Chat() {
                     console.log('Duplicate message ID found. Message ignored.');
                 }
             }
-
-            
-            
+    
         } else if (messageData.type == 'tokenExpired') {
             logout();
         }
-    
     }
     
 
     function showOnlineUsers(users){
-        // Clear duplicates
-        const uniqueUsers = {};
+        const otherOnlineUsers = {};
         users.forEach(({id, username}) => {
             if (id && id != currentId){
-                uniqueUsers[id] = username;
+                otherOnlineUsers[id] = username;
             }
         });
-        setOnlineUsers(uniqueUsers);
+        setOnlineUsers(otherOnlineUsers);
     }
 
     function sendMessage(ev) {
         ev.preventDefault();
+
         const userMessage = {
             type: 'message',
             message: {
@@ -147,10 +142,10 @@ export default function Chat() {
                 text: messageText,
             },
         };
-        
+        setMessageText('');
+
         ws.send(JSON.stringify(userMessage))
         setMessages(prev => ([...prev, {messageData: userMessage}]))
-        setMessageText('');
     }
 
     function logout(){
@@ -158,13 +153,10 @@ export default function Chat() {
             ws.send(JSON.stringify({ type: 'logout' })); // Notify the server about logout
             //ws.close(); // Close the WebSocket connection
         }
-        context.setUser(null);
-        localStorage.removeItem('token');
-        delete axios.defaults.headers.common['Authorization'];
         setWs(null);
+        localStorage.removeItem('token');
         // Force a page reload
         window.location.reload();
-        
     }
 
     function sendFile(ev) {
@@ -215,15 +207,13 @@ export default function Chat() {
             return null;
         }
         
-    
         return multimediaUrls.map((url, index) => {
             let element = null;
             if (/\.(jpg|jpeg|png|gif)$/i.test(url)) {
-                element = <img key={index} src={url} alt="Image" className="multimedia-element" style={{ height: "200px" }} onLoad={handleImageLoad}/>;
+                element = <img key={index} src={url} alt="Image" className="multimedia-element" style={{ height: "200px" }} onLoad={scrollToCurrent}/>;
             } else if (/\.(mp4)$/i.test(url)) {
-                
                 element = (
-                    <video key={index} controls className="multimedia-element" style={{ height: "200px" }} onLoad={handleImageLoad}>
+                    <video key={index} controls className="multimedia-element" style={{ height: "200px" }} onLoad={scrollToCurrent}>
                         <source src={url} type="video/mp4" />
                     </video>
                 );
@@ -232,7 +222,7 @@ export default function Chat() {
         });
     }
 
-    function handleImageLoad() {
+    function scrollToCurrent() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
     }
 
@@ -240,64 +230,11 @@ export default function Chat() {
         <>
             <div className="flex h-screen">
                 {/** SIDE BAR */}
-                <div className="bg-blue-50 w-1/3 flex flex-col">
-                    <div className="flex-grow">
-                        <Logo />
-                        {Object.keys(onlineUsers).map((id, index) => (
-                            <User key={index} id={id} username={onlineUsers[id]} online={true} selected={selectedUser === id} onClick={() => setSelectedUser(id)}/>
-                        ))}
-                        {Object.keys(offlineUsers).map((id, index) => (
-                            <User key={index} id={id} username={offlineUsers[id]} online={false} selected={selectedUser === id} onClick={() => setSelectedUser(id)}/>
-                        ))}
-                    </div>
-                    
-                    <div className="p-2 text-center flex items-center justify center">
-                        <span className="m-4 text-sm text-gray-500 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                                <path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clipRule="evenodd" />
-                            </svg>
-                            {context.user.username}
-                        </span>
-                        <button className="text-sm bg-blue-500 py-2 px-8 text-white border rounded-lg" onClick={logout}>
-                            Logout
-                        </button>
-                    </div>
-                </div>
+                    <SideBar onlineUsers={onlineUsers} offlineUsers={offlineUsers} selectedUser={selectedUser} setSelectedUser={setSelectedUser} context={context} logout={logout}/>
                 {/** MAIN BAR */}
-                <div className="flex flex-col bg-blue-200 w-2/3 p-4">
+                <div className="flex flex-col bg-blue-200 w-3/4 p-4">
                     {/** MESSAGES */}
-                    <div className="flex-grow">
-                        {!selectedUser && (
-                            <div className="flex h-full items-center justify-center">
-                                <div className="text-gray-500">Select a user to start messaging</div>
-                            </div>
-                        )}
-                        {!!selectedUser && (
-                            <div className="relative h-full">
-                                <div className="flex flex-col items-end overflow-y-scroll absolute inset-0">
-                                    {messages.map(function (msg, index) {
-                                        const multimediaElement = renderMultimediaElements(msg.messageData.message)
-
-                                        return (
-                                            <div key={index} className={`p-2 mb-2 rounded-lg max-w-sm ${msg.messageData.message.sender === currentId ? 'bg-blue-500 text-white self-end' : 'bg-gray-200 text-gray-700 self-start'}`}>
-                                                {multimediaElement === null ? (
-                                                    <div>
-                                                        {msg.messageData.message.text}
-                                                    </div>
-                                                ) : (
-                                                    <div>
-                                                        {multimediaElement}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            
-                                        )
-                                    })}
-                                    <div ref={messagesEndRef} />
-                                 </div>
-                            </div>
-                        )}
-                    </div>
+                    <MessageHistory selectedUser={selectedUser} messages={messages} renderMultimediaElements={renderMultimediaElements} currentId={currentId} messagesEndRef={messagesEndRef}/>
                     {/** FORM */}
                     {!!selectedUser && (
                         <Form onSubmit={sendMessage} onChange={(ev) => {setMessageText(ev.target.value)}} value={messageText} sendFile={sendFile}/>
