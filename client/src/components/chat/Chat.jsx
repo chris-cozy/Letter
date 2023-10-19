@@ -16,7 +16,7 @@ export default function Chat() {
     const context = useContext(UserContext);
     console.log(context.user)
     const currentId = context.user._id
-    const uniqueMessageIds = new Set();
+    
 
     const messagesEndRef = useRef(null);
 
@@ -86,7 +86,6 @@ export default function Chat() {
         socket.addEventListener('message', handleMessage)
 
         // Auto reconnect to socket once it disconnects
-        /*
         socket.addEventListener('close', () => {
             if (token) {
                 console.log("Disconnected. Trying to reconnect...");
@@ -94,31 +93,38 @@ export default function Chat() {
             }
             
         })
-        */
 
         socket.onerror = (error) => {
             console.error('WebSocket Error: ', error);
         };
     }
 
+    const uniqueMessageIds = new Set();
     function handleMessage(event) {
         const messageData = JSON.parse(event.data);
-        console.log(messageData);
-        if (messageData.type == 'online'){
+        if (messageData.type === 'online'){
             showOnlineUsers(messageData.online);
-        } else if (messageData.type == 'message') {
-            if (!uniqueMessageIds.has(messageData.messageId)){
-                uniqueMessageIds.add(messageData.messageId);
-                setMessages(prev => ([...prev, {messageData: messageData}]));
-            } else {
-                console.log('Duplicate message ID found. Message ignored.');
+        } else if (messageData.type === 'message') {
+            console.log(messageData.message.sender === selectedUser)
+
+            if (messageData.message.sender === selectedUser){
+                if (!uniqueMessageIds.has(messageData.messageId)){
+                    uniqueMessageIds.add(messageData.messageId);
+                    console.log(messageData);
+                    setMessages(prev => ([...prev, {messageData: messageData}]));
+                } else {
+                    console.log('Duplicate message ID found. Message ignored.');
+                }
             }
+
+            
             
         } else if (messageData.type == 'tokenExpired') {
             logout();
         }
     
     }
+    
 
     function showOnlineUsers(users){
         // Clear duplicates
@@ -192,6 +198,44 @@ export default function Chat() {
         });
     }
 
+    function parseMultimediaUrls(text) {
+        const multimediaRegex = /\.(jpg|jpeg|png|gif|mp4)$/i;
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+    
+        const urls = text.match(urlRegex) || [];
+        const multimediaUrls = urls.filter(url => multimediaRegex.test(url));
+    
+        return multimediaUrls;
+    }
+
+    function renderMultimediaElements(message) {
+        const multimediaUrls = parseMultimediaUrls(message.text);
+
+        if (multimediaUrls.length === 0){
+            return null;
+        }
+        
+    
+        return multimediaUrls.map((url, index) => {
+            let element = null;
+            if (/\.(jpg|jpeg|png|gif)$/i.test(url)) {
+                element = <img key={index} src={url} alt="Image" className="multimedia-element" style={{ height: "200px" }} onLoad={handleImageLoad}/>;
+            } else if (/\.(mp4)$/i.test(url)) {
+                
+                element = (
+                    <video key={index} controls className="multimedia-element" style={{ height: "200px" }} onLoad={handleImageLoad}>
+                        <source src={url} type="video/mp4" />
+                    </video>
+                );
+            } 
+            return element;
+        });
+    }
+
+    function handleImageLoad() {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+    }
+
     return (
         <>
             <div className="flex h-screen">
@@ -231,16 +275,24 @@ export default function Chat() {
                         {!!selectedUser && (
                             <div className="relative h-full">
                                 <div className="flex flex-col items-end overflow-y-scroll absolute inset-0">
-                                    {messages.map((message, index) => (
+                                    {messages.map(function (msg, index) {
+                                        const multimediaElement = renderMultimediaElements(msg.messageData.message)
 
-                                        <div key={index} className={`p-2 rounded-lg max-w-sm ${
-                                            message.messageData.message.sender === currentId
-                                                ? 'bg-blue-500 text-white self-end'
-                                                : 'bg-gray-200 text-gray-700 self-start'
-                                        } mb-2`}>
-                                            {message.messageData.message.text}
-                                        </div>
-                                    ))}
+                                        return (
+                                            <div key={index} className={`p-2 mb-2 rounded-lg max-w-sm ${msg.messageData.message.sender === currentId ? 'bg-blue-500 text-white self-end' : 'bg-gray-200 text-gray-700 self-start'}`}>
+                                                {multimediaElement === null ? (
+                                                    <div>
+                                                        {msg.messageData.message.text}
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        {multimediaElement}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
+                                        )
+                                    })}
                                     <div ref={messagesEndRef} />
                                  </div>
                             </div>
