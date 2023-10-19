@@ -21,6 +21,7 @@ export default function Chat() {
         if (selectedUser){
             axios.get(`/v1/messages/${currentId}/${selectedUser}`).then((res) => {
                 const messages = res.data;
+                let formattedMessages = [];
                 messages.forEach((message) => {
                     const prevMessage = {
                         type: 'message',
@@ -34,12 +35,16 @@ export default function Chat() {
     }, [selectedUser])
 
     useEffect(() => {
-        // Scroll to the bottom of the message container when messages change
+        
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]); // Trigger effect whenever messages change
 
     useEffect(() => {
-    
+        connectWebSocket();
+
+    }, []) //eslint-disable-line react-hooks/exhaustive-deps
+
+    function connectWebSocket(){
         const socket = new WebSocket('ws://127.0.0.1:4040')
         setWs(socket);
 
@@ -53,15 +58,20 @@ export default function Chat() {
             };
               
             socket.send(JSON.stringify(authMessage));
+            console.log('auth message sent')
           };
 
         socket.addEventListener('message', handleMessage)
 
+        // Auto reconnect to socket once it disconnects
+        socket.addEventListener('close', () => {
+            setTimeout(() => {connectWebSocket()}, 1000)
+        })
+
         socket.onerror = (error) => {
             console.error('WebSocket Error: ', error);
           };
-          
-    }, []) //eslint-disable-line react-hooks/exhaustive-deps
+    }
 
     function handleMessage(event) {
         const messageData = JSON.parse(event.data);
@@ -71,8 +81,8 @@ export default function Chat() {
         }
         if (messageData.type == 'message') {
             if (!uniqueMessageIds.has(messageData.messageId)){
-                setMessages(prev => ([...prev, {messageData: messageData}]));
                 uniqueMessageIds.add(messageData.messageId);
+                setMessages(prev => ([...prev, {messageData: messageData}]));
             } else {
                 console.log('Duplicate message ID found. Message ignored.');
             }
