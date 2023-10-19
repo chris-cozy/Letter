@@ -14,9 +14,11 @@ app.use(cookieParser());
 
 const authRoutes = require("./routes/auth");
 const messagesRoutes = require("./routes/messages");
+const userRoutes = require("./routes/user");
 
 app.use("/v1/auth", authRoutes);
 app.use("/v1/messages", messagesRoutes);
+app.use("/v1/user", userRoutes);
 
 const PORT = process.env.PORT || 3000;
 

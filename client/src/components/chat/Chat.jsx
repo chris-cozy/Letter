@@ -1,13 +1,15 @@
 import { useContext, useEffect, useRef, useState } from "react"
-import Avatar from "./Avatar";
-import Logo from "./Logo"
+import User from "./User";
+import Logo from "./Logo";
+import Form from "./Form";
 import { UserContext } from "../UserContext";
 import axios from 'axios';
 
 
 export default function Chat() {
     const [ws, setWs] = useState(null);
-    const [onlineUsers, setOnlineUsers] = useState([]);
+    const [onlineUsers, setOnlineUsers] = useState({});
+    const [offlineUsers, setOfflineUsers] = useState({});
     const [selectedUser, setSelectedUser] = useState(null);
     const [messageText, setMessageText] = useState('');
     const [messages, setMessages] = useState([])
@@ -18,6 +20,7 @@ export default function Chat() {
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
+        setMessages([])
         if (selectedUser){
             axios.get(`/v1/messages/${currentId}/${selectedUser}`).then((res) => {
                 const messages = res.data;
@@ -44,6 +47,21 @@ export default function Chat() {
 
     }, []) //eslint-disable-line react-hooks/exhaustive-deps
 
+    // Handle online/offline users
+    useEffect(() => {
+        axios.get('/v1/user').then((res) => {
+            // Filter to only offline users
+            const offlineUsers = res.data.filter(user => user._id !== currentId).filter(user => !Object.keys(onlineUsers).includes(user._id))
+            const formattedUsers = {}
+            offlineUsers.forEach((user) => {
+                formattedUsers[user._id] = user.username
+            })
+            setOfflineUsers(formattedUsers);
+        })
+        console.log(onlineUsers);
+        console.log(offlineUsers);
+    }, [onlineUsers])
+
     function connectWebSocket(){
         const socket = new WebSocket('ws://127.0.0.1:4040')
         setWs(socket);
@@ -58,7 +76,7 @@ export default function Chat() {
             };
               
             socket.send(JSON.stringify(authMessage));
-            console.log('auth message sent')
+            console.log('Auth handshake message sent')
           };
 
         socket.addEventListener('message', handleMessage)
@@ -75,7 +93,7 @@ export default function Chat() {
 
     function handleMessage(event) {
         const messageData = JSON.parse(event.data);
-        console.log(messageData);
+        //console.log(messageData);
         if (messageData.type == 'online'){
             showOnlineUsers(messageData.online);
         }
@@ -125,17 +143,11 @@ export default function Chat() {
                 {/** CONTACTS */}
                 <div className="bg-blue-50 w-1/3">
                     <Logo />
-                    {Object.keys(onlineUsers).map((id) => (
-                        <div key={id} className={"flex border-b cursor-pointer " + (id === selectedUser ? 'bg-blue-200 font-semibold' : '')} onClick={() => setSelectedUser(id)}>
-                            {id === selectedUser && (
-                                <div className="w-1 bg-blue-500 h-half rounded-r-lg"></div>
-                            )}
-                            <div className="pl-4 py-2 flex gap-2 items-center">
-                                <Avatar online={true} username={onlineUsers[id]} id={id}/>
-                                <span className="text-md text-gray-800">{onlineUsers[id]}</span>
-                            </div>
-                            
-                        </div>
+                    {Object.keys(onlineUsers).map((id, index) => (
+                        <User key={index} id={id} username={onlineUsers[id]} online={true} selected={selectedUser === id} onClick={() => setSelectedUser(id)}/>
+                    ))}
+                    {Object.keys(offlineUsers).map((id, index) => (
+                        <User key={index} id={id} username={offlineUsers[id]} online={false} selected={selectedUser === id} onClick={() => setSelectedUser(id)}/>
                     ))}
                 </div>
                 {/** MESSAGES */}
@@ -166,14 +178,7 @@ export default function Chat() {
                     </div>
                     {/** MESSAGE SENDING */}
                     {!!selectedUser && (
-                        <form className="flex gap-2" onSubmit={sendMessage}>
-                            <input type="text" placeholder="Write a message..." className="bg-white border p-2 rounded-lg flex-grow" value={messageText} onChange={ev => setMessageText(ev.target.value)}/>
-                            <button type='submit' className="bg-blue-500 p-2 text-white rounded-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                                </svg>
-                            </button>
-                         </form>
+                        <Form onSubmit={sendMessage} onChange={(ev) => {setMessageText(ev.target.value)}} value={messageText}/>
                     )}
                     
                 </div>
