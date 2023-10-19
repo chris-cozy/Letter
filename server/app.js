@@ -32,11 +32,44 @@ const wsServer = new ws.WebSocketServer({ server });
 wsServer.on("connection", (connection, req) => {
   console.log("Web socket server connected.");
 
+  function sendOnlineUsers() {
+    // Send list of active clients to current client upon connect
+    [...wsServer.clients].forEach((client) => {
+      client.send(
+        JSON.stringify({
+          type: "online",
+          online: [...wsServer.clients].map((c) => ({
+            id: c.id,
+            username: c.username,
+          })),
+        })
+      );
+    });
+  }
+
+  connection.isAlive = true;
+
+  // Removing dead clients to update online/offline statuses and save resources
+  connection.timer = setInterval(() => {
+    if (connection.isAlive) {
+      connection.ping();
+      connection.deathTimer = setTimeout(() => {
+        connection.isAlive = false;
+        connection.terminate();
+        sendOnlineUsers();
+        console.log("death");
+      }, 2000);
+    }
+  }, 5000);
+
+  connection.on("pong", () => {
+    clearTimeout(connection.deathTimer);
+  });
+
   connection.on("message", async (message) => {
     const parsedMessage = JSON.parse(message.toString());
     if (parsedMessage.type === "auth") {
       const token = parsedMessage.token;
-      console.log(token);
 
       jwt.verify(token, process.env.JWT_SECRET, {}, (err, user) => {
         if (err) {
@@ -45,7 +78,7 @@ wsServer.on("connection", (connection, req) => {
         const { id, username } = user;
         connection.id = id;
         connection.username = username;
-        console.log(username);
+        console.log(`${username} is connected.`);
       });
     } else if (parsedMessage.type === "message") {
       // Save message to database
@@ -70,17 +103,9 @@ wsServer.on("connection", (connection, req) => {
     }
   });
 
-  // Send list of active clients upon connect
-  console.log([...wsServer.clients].map((c) => c.username));
-  [...wsServer.clients].forEach((client) => {
-    client.send(
-      JSON.stringify({
-        type: "online",
-        online: [...wsServer.clients].map((c) => ({
-          id: c.id,
-          username: c.username,
-        })),
-      })
-    );
-  });
+  sendOnlineUsers();
+});
+
+wsServer.on("close", (data) => {
+  console.log("disconnected", data);
 });
