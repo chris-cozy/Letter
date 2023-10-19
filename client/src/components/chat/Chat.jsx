@@ -131,7 +131,7 @@ export default function Chat() {
                                 <div className="w-1 bg-blue-500 h-half rounded-r-lg"></div>
                             )}
                             <div className="pl-4 py-2 flex gap-2 items-center">
-                                <Avatar username={onlineUsers[id]} id={id}/>
+                                <Avatar online={true} username={onlineUsers[id]} id={id}/>
                                 <span className="text-md text-gray-800">{onlineUsers[id]}</span>
                             </div>
                             
