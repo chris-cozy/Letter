@@ -73,12 +73,23 @@ wsServer.on("connection", (connection, req) => {
 
       jwt.verify(token, process.env.JWT_SECRET, {}, (err, user) => {
         if (err) {
-          console.error(err);
+          // Handle JWT token expiration error
+          if (err.name === "TokenExpiredError") {
+            // Send a message to the client indicating token expiration
+            connection.send(JSON.stringify({ type: "tokenExpired" }));
+            // Optionally, close the connection or handle reauthentication logic
+            connection.terminate();
+            // Implement reauthentication logic here...
+          } else {
+            // Handle other JWT verification errors
+            console.error(err);
+          }
+        } else {
+          const { id, username } = user;
+          connection.id = id;
+          connection.username = username;
+          console.log(`${username} is connected.`);
         }
-        const { id, username } = user;
-        connection.id = id;
-        connection.username = username;
-        console.log(`${username} is connected.`);
       });
     } else if (parsedMessage.type === "message") {
       // Save message to database

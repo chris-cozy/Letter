@@ -96,8 +96,7 @@ export default function Chat() {
         //console.log(messageData);
         if (messageData.type == 'online'){
             showOnlineUsers(messageData.online);
-        }
-        if (messageData.type == 'message') {
+        } else if (messageData.type == 'message') {
             if (!uniqueMessageIds.has(messageData.messageId)){
                 uniqueMessageIds.add(messageData.messageId);
                 setMessages(prev => ([...prev, {messageData: messageData}]));
@@ -105,6 +104,8 @@ export default function Chat() {
                 console.log('Duplicate message ID found. Message ignored.');
             }
             
+        } else if (messageData.type == 'tokenExpired') {
+            logout();
         }
     
     }
@@ -137,21 +138,35 @@ export default function Chat() {
         
     }
 
+    function logout(){
+        context.setUser(null);
+        localStorage.removeItem('token');
+    }
+
     return (
         <>
             <div className="flex h-screen">
-                {/** CONTACTS */}
-                <div className="bg-blue-50 w-1/3">
-                    <Logo />
-                    {Object.keys(onlineUsers).map((id, index) => (
-                        <User key={index} id={id} username={onlineUsers[id]} online={true} selected={selectedUser === id} onClick={() => setSelectedUser(id)}/>
-                    ))}
-                    {Object.keys(offlineUsers).map((id, index) => (
-                        <User key={index} id={id} username={offlineUsers[id]} online={false} selected={selectedUser === id} onClick={() => setSelectedUser(id)}/>
-                    ))}
+                {/** SIDE BAR */}
+                <div className="bg-blue-50 w-1/3 flex flex-col">
+                    <div className="flex-grow">
+                        <Logo />
+                        {Object.keys(onlineUsers).map((id, index) => (
+                            <User key={index} id={id} username={onlineUsers[id]} online={true} selected={selectedUser === id} onClick={() => setSelectedUser(id)}/>
+                        ))}
+                        {Object.keys(offlineUsers).map((id, index) => (
+                            <User key={index} id={id} username={offlineUsers[id]} online={false} selected={selectedUser === id} onClick={() => setSelectedUser(id)}/>
+                        ))}
+                    </div>
+                    
+                    <div className="p-2 text-center">
+                        <button className="text-sm bg-blue-500 py-2 px-8 text-white border rounded-lg" onClick={logout}>
+                            Logout
+                        </button>
+                    </div>
                 </div>
-                {/** MESSAGES */}
+                {/** MAIN BAR */}
                 <div className="flex flex-col bg-blue-200 w-2/3 p-4">
+                    {/** MESSAGES */}
                     <div className="flex-grow">
                         {!selectedUser && (
                             <div className="flex h-full items-center justify-center">
@@ -176,7 +191,7 @@ export default function Chat() {
                             </div>
                         )}
                     </div>
-                    {/** MESSAGE SENDING */}
+                    {/** FORM */}
                     {!!selectedUser && (
                         <Form onSubmit={sendMessage} onChange={(ev) => {setMessageText(ev.target.value)}} value={messageText}/>
                     )}
