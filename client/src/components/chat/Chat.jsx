@@ -141,11 +141,10 @@ export default function Chat() {
                 text: messageText,
             },
         };
-          
+        
         ws.send(JSON.stringify(userMessage))
         setMessages(prev => ([...prev, {messageData: userMessage}]))
         setMessageText('');
-        
     }
 
     function logout(){
@@ -160,6 +159,37 @@ export default function Chat() {
         // Force a page reload
         window.location.reload();
         
+    }
+
+    function sendFile(ev) {
+        const file = ev.target.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Use Axios or Fetch API to upload the file to the server
+        axios.post('/v1/messages/file', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        }).then((response) => {
+            // Handle the response, which may contain the file URL on the server
+            const fileUrl = response.data.fileUrl;
+            
+            // Send the file URL to the server along with other message data
+            const userMessage = {
+                type: 'message',
+                message: {
+                    sender: currentId,
+                    recipient: selectedUser,
+                    text: `${fileUrl}`, // You can format the message text as needed
+                },
+            };
+            
+            ws.send(JSON.stringify(userMessage));
+            setMessages(prev => ([...prev, {messageData: userMessage}]));
+        }).catch((error) => {
+            console.error(error)
+        });
     }
 
     return (
@@ -218,7 +248,7 @@ export default function Chat() {
                     </div>
                     {/** FORM */}
                     {!!selectedUser && (
-                        <Form onSubmit={sendMessage} onChange={(ev) => {setMessageText(ev.target.value)}} value={messageText}/>
+                        <Form onSubmit={sendMessage} onChange={(ev) => {setMessageText(ev.target.value)}} value={messageText} sendFile={sendFile}/>
                     )}
                     
                 </div>

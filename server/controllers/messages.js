@@ -19,6 +19,16 @@ async function getMessages(req, res) {
   }
 }
 
+async function sendFile(req, res) {
+  try {
+    const fileUrl = `${process.env.SERVER_URL}/uploads/${req.file.filename}`; // Specify the server domain and upload directory
+    res.status(201).json({ fileUrl: fileUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   getMessages,
+  sendFile,
 };

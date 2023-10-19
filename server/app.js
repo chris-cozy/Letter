@@ -4,6 +4,7 @@ const cookieParser = require("cookie-parser");
 const ws = require("ws");
 const jwt = require("jsonwebtoken");
 const Message = require("./models/Message");
+const path = require("path");
 
 require("dotenv").config();
 
@@ -11,6 +12,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({ credentials: true, origin: true }));
 app.use(cookieParser());
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads"))); // Setting up local storage dir
 
 const authRoutes = require("./routes/auth");
 const messagesRoutes = require("./routes/messages");
@@ -44,10 +46,6 @@ wsServer.on("connection", (connection, req) => {
           })),
         })
       );
-    });
-
-    [...wsServer.clients].forEach((client) => {
-      console.log("CLIENT: ", client.username);
     });
   }
 
