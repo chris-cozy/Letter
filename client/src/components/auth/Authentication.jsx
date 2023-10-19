@@ -14,11 +14,11 @@ export default function Authentication() {
         const endpoint = isLogin ? '/v1/auth/login' : '/v1/auth/register'
         ev.preventDefault();
         const {data} = await axios.post(endpoint, {username, password});
-        console.log(data)
+        
         localStorage.setItem('token', data);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${data}`
         await axios.get('/v1/auth/profile').then(res => {
             setUser(res.data)
-            console.log(res.data)
         })
     }
 

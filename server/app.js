@@ -45,22 +45,29 @@ wsServer.on("connection", (connection, req) => {
         })
       );
     });
+
+    [...wsServer.clients].forEach((client) => {
+      console.log("CLIENT: ", client.username);
+    });
   }
 
   connection.isAlive = true;
 
   // Removing dead clients to update online/offline statuses and save resources
   connection.timer = setInterval(() => {
-    if (connection.isAlive) {
-      connection.ping();
-      connection.deathTimer = setTimeout(() => {
-        connection.isAlive = false;
-        connection.terminate();
-        sendOnlineUsers();
-        console.log("death");
-      }, 2000);
-    }
+    connection.ping();
+    connection.deathTimer = setTimeout(() => {
+      console.log("death: ", connection.username);
+      connection.isAlive = false;
+      connection.terminate();
+      clearInterval(connection.timer);
+    }, 2000);
   }, 5000);
+
+  connection.on("close", () => {
+    console.log("connection closed: ", connection.username);
+    sendOnlineUsers();
+  });
 
   connection.on("pong", () => {
     clearTimeout(connection.deathTimer);
@@ -78,11 +85,12 @@ wsServer.on("connection", (connection, req) => {
             // Send a message to the client indicating token expiration
             connection.send(JSON.stringify({ type: "tokenExpired" }));
             // Optionally, close the connection or handle reauthentication logic
-            connection.terminate();
+            // connection.terminate();
             // Implement reauthentication logic here...
           } else {
+            connection.send(JSON.stringify({ type: "serverError" }));
             // Handle other JWT verification errors
-            console.error(err);
+            // connection.terminate();
           }
         } else {
           const { id, username } = user;
@@ -111,6 +119,11 @@ wsServer.on("connection", (connection, req) => {
       [...wsServer.clients]
         .filter((c) => c.id === parsedMessage.message.recipient)
         .forEach((c) => c.send(JSON.stringify(toClient)));
+    } else if (parsedMessage.type === "logout") {
+      // Handle logout logic: Update user's online status to offline and remove connection
+      // Example code to update online status to offline:
+      // updateUserOnlineStatus(parsedMessage.userId, false);
+      connection.terminate(); // Terminate the connection after handling logout
     }
   });
 

@@ -1,7 +1,7 @@
 import { useContext } from "react";
-import Authentication from "./components/auth/Authentication";
-import Chat from "./components/chat/Chat"
-import { UserContext } from "./components/UserContext";
+import Authentication from "./auth/Authentication";
+import Chat from "./chat/Chat"
+import { UserContext } from "./UserContext";
 
 
 
