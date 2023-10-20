@@ -23,7 +23,7 @@ export default {
         sidebar_contact_name: "#FFFFFF",
         sidebar_logo: "#8744c6",
         sidebar_logout_button: "#8744c6",
-        sidebar_logout_button_hover: "#FF8C00",
+        sidebar_logout_button_hover: "#6d2f9c",
         sidebar_logout_button_text: "#FFFFFF",
         sidebar_current_user: "#CCCCCC",
         message_history_background: "#191919",

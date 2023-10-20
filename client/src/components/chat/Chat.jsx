@@ -1,15 +1,15 @@
 import { useContext, useEffect, useRef, useState } from "react"
-import User from "./User";
-import Logo from "./Logo";
 import Form from "./Form";
 import SideBar from "./SideBar";
 import { UserContext } from "../UserContext";
 import axios from 'axios';
 import MessageHistory from "./MessageHistory";
+import TopBar from "./TopBar";
 
 
 export default function Chat() {
     const [ws, setWs] = useState(null);
+    const [allUsers, setAllUsers] = useState({});
     const [onlineUsers, setOnlineUsers] = useState({});
     const [offlineUsers, setOfflineUsers] = useState({});
     const [selectedUser, setSelectedUser] = useState(null);
@@ -55,7 +55,14 @@ export default function Chat() {
     // Handle online/offline users
     useEffect(() => {
         axios.get('/v1/user').then((res) => {
-            const offlineUsers = res.data.filter(user => user._id !== currentId).filter(user => !Object.keys(onlineUsers).includes(user._id))
+            const users = res.data.filter(user => user._id !== currentId)
+            const formattedOtherUsers ={}
+            users.forEach((user) => {
+                formattedOtherUsers[user._id] = user.username
+            })
+            setAllUsers(formattedOtherUsers)
+
+            const offlineUsers = users.filter(user => !Object.keys(onlineUsers).includes(user._id))
             const formattedUsers = {}
             offlineUsers.forEach((user) => {
                 formattedUsers[user._id] = user.username
@@ -210,10 +217,10 @@ export default function Chat() {
         return multimediaUrls.map((url, index) => {
             let element = null;
             if (/\.(jpg|jpeg|png|gif)$/i.test(url)) {
-                element = <img key={index} src={url} alt="Image" className="multimedia-element" style={{ height: "200px" }} onLoad={scrollToCurrent}/>;
+                element = <img key={index} src={url} alt="Image" className="multimedia-element rounded-2xl" style={{ height: "200px" }} onLoad={scrollToCurrent}/>;
             } else if (/\.(mp4)$/i.test(url)) {
                 element = (
-                    <video key={index} controls className="multimedia-element" style={{ height: "200px" }} onLoad={scrollToCurrent}>
+                    <video key={index} controls className="multimedia-element rounded-2xl" style={{ height: "200px" }} onLoad={scrollToCurrent}>
                         <source src={url} type="video/mp4" />
                     </video>
                 );
@@ -228,18 +235,18 @@ export default function Chat() {
 
     return (
         <>
-            <div className="flex h-screen">
+            <div className="flex md:flex-row h-screen bg-gradient-to-r from-message_history_background to-form_background">
                 {/** SIDE BAR */}
+                <div className={`md:flex lg:w-96 ${selectedUser ? 'hidden w-96' : 'flex w-full'}`}>
                     <SideBar onlineUsers={onlineUsers} offlineUsers={offlineUsers} selectedUser={selectedUser} setSelectedUser={setSelectedUser} context={context} logout={logout}/>
+                </div>
                 {/** MAIN BAR */}
-                <div className="flex flex-col bg-blue-200 w-3/4 p-4">
-                    {/** MESSAGES */}
+                <div className={`md:flex ${selectedUser ? 'flex flex-col w-full' : 'hidden w-full'}`}>
+                    <TopBar selectedUser={selectedUser} onClick={() => setSelectedUser(null)} allUsers={allUsers} />
                     <MessageHistory selectedUser={selectedUser} messages={messages} renderMultimediaElements={renderMultimediaElements} currentId={currentId} messagesEndRef={messagesEndRef}/>
-                    {/** FORM */}
                     {!!selectedUser && (
                         <Form onSubmit={sendMessage} onChange={(ev) => {setMessageText(ev.target.value)}} value={messageText} sendFile={sendFile}/>
                     )}
-                    
                 </div>
             </div>
         </>

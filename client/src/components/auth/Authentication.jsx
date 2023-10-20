@@ -26,16 +26,34 @@ export default function Authentication() {
             <div className="bg-gradient-to-br from-page_background to-login_button_hover min-h-screen flex flex-col items-center justify-center">
                 <div className="items-center justify-center flex flex-col p-6 rounded-lg">
                     <div className="text-app_title flex items-center justify-center gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 transition delay-50 duration-300 ease-in-out transform hover:scale-125 cursor-default">
                             <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
                             <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
                         </svg>
-                        <h1 className="text-4xl font-bold mb-1 text-app_title">
-                        Letter
-                        </h1>
+                        <div className="flex">
+                            <span className="text-4xl font-bold mb-1 text-app_title transition delay-50 duration-300 ease-in-out transform hover:scale-125 cursor-default">
+                            L
+                            </span>
+                            <span className="text-4xl font-bold mb-1 text-app_title transition delay-50 duration-300 ease-in-out transform hover:scale-125 cursor-default">
+                            e
+                            </span>
+                            <span className="text-4xl font-bold mb-1 text-app_title transition delay-50 duration-300 ease-in-out transform hover:scale-125 cursor-default">
+                            t
+                            </span>
+                            <span className="text-4xl font-bold mb-1 text-app_title transition delay-50 duration-300 ease-in-out transform hover:scale-125 cursor-default">
+                            t
+                            </span>
+                            <span className="text-4xl font-bold mb-1 text-app_title transition delay-50 duration-300 ease-in-out transform hover:scale-125 cursor-default">
+                            e
+                            </span>
+                            <span className="text-4xl font-bold mb-1 text-app_title transition delay-50 duration-300 ease-in-out transform hover:scale-125 cursor-default">
+                            r
+                            </span>
+                        </div>
+                        
                     </div>
                     
-                    <p className="text-lg mb-10 text-app_slogan text-center">Messages that matter - Moments that connect</p>
+                    <p className="text-lg mb-10 text-app_slogan text-center cursor-default">Messages that matter - Moments that connect</p>
                     <div className="bg-form_background/80 shadow-lg items-center justify-center flex flex-col p-10 rounded-2xl w-full max-w-sm">
                     <form className="w-full mx-auto" onSubmit={handleSubmit}>
                         <input value={username} onChange={ev => setUsername(ev.target.value)} type="text" placeholder="username" className="block w-full rounded-2xl p-2 mb-4 border border-login_button transition delay-50 duration-300 ease-in-out transform hover:border-app_slogan bg-form_background caret-app_slogan text-app_slogan" />
