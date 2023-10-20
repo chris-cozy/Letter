@@ -1,18 +1,14 @@
 const express = require("express");
 const cors = require("cors");
-const cookieParser = require("cookie-parser");
 const ws = require("ws");
 const jwt = require("jsonwebtoken");
 const Message = require("./models/Message");
 const path = require("path");
-
 require("dotenv").config();
-
 const app = express();
 app.use(express.json());
 app.use(cors({ credentials: true, origin: true }));
-app.use(cookieParser());
-app.use("/uploads", express.static(path.join(__dirname, "public/uploads"))); // Setting up local storage dir
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 const authRoutes = require("./routes/auth");
 const messagesRoutes = require("./routes/messages");
@@ -25,22 +21,21 @@ app.use("/v1/user", userRoutes);
 const PORT = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
-  console.log(`Message server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 
 /** WEBSOCKET SERVER */
-const wsServer = new ws.WebSocketServer({ server });
+const wss = new ws.WebSocketServer({ server });
 
-wsServer.on("connection", (connection, req) => {
+wss.on("connection", (connection, req) => {
   console.log("Web socket server connected.");
 
   function sendOnlineUsers() {
-    // Send list of active clients to current client upon connect
-    [...wsServer.clients].forEach((client) => {
+    [...wss.clients].forEach((client) => {
       client.send(
         JSON.stringify({
           type: "online",
-          online: [...wsServer.clients].map((c) => ({
+          online: [...wss.clients].map((c) => ({
             id: c.id,
             username: c.username,
           })),
@@ -51,11 +46,11 @@ wsServer.on("connection", (connection, req) => {
 
   connection.isAlive = true;
 
-  // Removing dead clients to update online/offline statuses and save resources
+  // Remove dead clients to update online/offline statuses and save resources
   connection.timer = setInterval(() => {
     connection.ping();
     connection.deathTimer = setTimeout(() => {
-      console.log("death: ", connection.username);
+      console.log("Client death: ", connection.username);
       connection.isAlive = false;
       connection.terminate();
       clearInterval(connection.timer);
@@ -63,7 +58,7 @@ wsServer.on("connection", (connection, req) => {
   }, 5000);
 
   connection.on("close", () => {
-    console.log("connection closed: ", connection.username);
+    console.log("Connection closed: ", connection.username);
     sendOnlineUsers();
   });
 
@@ -78,27 +73,21 @@ wsServer.on("connection", (connection, req) => {
 
       jwt.verify(token, process.env.JWT_SECRET, {}, (err, user) => {
         if (err) {
-          // Handle JWT token expiration error
           if (err.name === "TokenExpiredError") {
-            // Send a message to the client indicating token expiration
             connection.send(JSON.stringify({ type: "tokenExpired" }));
-            // Optionally, close the connection or handle reauthentication logic
-            // connection.terminate();
-            // Implement reauthentication logic here...
           } else {
             connection.send(JSON.stringify({ type: "serverError" }));
-            // Handle other JWT verification errors
-            // connection.terminate();
           }
         } else {
           const { id, username } = user;
+
           connection.id = id;
           connection.username = username;
+
           console.log(`${username} is connected.`);
         }
       });
     } else if (parsedMessage.type === "message") {
-      // Save message to database
       const { sender, recipient, text } = parsedMessage.message;
       const newMessage = new Message({
         sender,
@@ -114,20 +103,17 @@ wsServer.on("connection", (connection, req) => {
         message: parsedMessage.message,
       };
 
-      [...wsServer.clients]
+      [...wss.clients]
         .filter((c) => c.id === parsedMessage.message.recipient)
         .forEach((c) => c.send(JSON.stringify(toClient)));
     } else if (parsedMessage.type === "logout") {
-      // Handle logout logic: Update user's online status to offline and remove connection
-      // Example code to update online status to offline:
-      // updateUserOnlineStatus(parsedMessage.userId, false);
-      connection.terminate(); // Terminate the connection after handling logout
+      connection.terminate();
     }
   });
 
   sendOnlineUsers();
 });
 
-wsServer.on("close", (data) => {
-  console.log("disconnected", data);
+wss.on("close", (data) => {
+  console.log("Web Socket Server disconnected. Data: ", data);
 });

@@ -122,7 +122,7 @@ export default function Chat() {
                 }
             }
     
-        } else if (messageData.type == 'tokenExpired') {
+        } else if (messageData.type == 'tokenExpired' || messageData.type == 'serverError') {
             logout();
         }
     }
