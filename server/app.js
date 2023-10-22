@@ -12,6 +12,12 @@ app.use(express.json());
 app.use(
   cors({ credentials: true, origin: "https://letter-webapp.netlify.app" })
 );
+
+app.options(
+  "*",
+  cors({ credentials: true, origin: "https://letter-webapp.netlify.app" })
+);
+
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 const authRoutes = require("./routes/auth");
