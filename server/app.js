@@ -1,4 +1,5 @@
 const https = require("https");
+const http = require("http");
 const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
@@ -28,17 +29,9 @@ app.use("/v1/user", userRoutes);
 
 const PORT = process.env.PORT || 3000;
 
-const server = https
-  .createServer(
-    {
-      key: fs.readFileSync("secure_key.pem"),
-      cert: fs.readFileSync("secure_cert.pem"),
-    },
-    app
-  )
-  .listen(PORT, () => {
-    console.log(`HTTPS server running on port ${PORT}`);
-  });
+const server = http.createServer(app).listen(PORT, () => {
+  console.log(`HTTP server running on port ${PORT}`);
+});
 
 /** WEBSOCKET SERVER */
 const wss = new ws.WebSocketServer({ server });
