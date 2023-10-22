@@ -9,7 +9,9 @@ const path = require("path");
 require("dotenv").config();
 const app = express();
 app.use(express.json());
-app.use(cors({ credentials: true, origin: true }));
+app.use(
+  cors({ credentials: true, origin: "https://letter-webapp.netlify.app" })
+);
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 const authRoutes = require("./routes/auth");
@@ -24,7 +26,10 @@ const PORT = process.env.PORT || 3000;
 
 const server = https
   .createServer(
-    { key: fs.readFileSync("key.pem"), cert: fs.readFileSync("cert.pem") },
+    {
+      key: fs.readFileSync("secure_key.pem"),
+      cert: fs.readFileSync("secure_cert.pem"),
+    },
     app
   )
   .listen(PORT, () => {
