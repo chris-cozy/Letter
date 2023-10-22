@@ -9,9 +9,12 @@ const path = require("path");
 require("dotenv").config();
 const app = express();
 app.use(express.json());
-app.use(
-  cors({ credentials: true, origin: "https://letter-webapp.netlify.app" })
-);
+
+const corsOptions = {
+  credentials: true,
+  origin: "https://letter-webapp.netlify.app",
+};
+app.use(cors());
 
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
