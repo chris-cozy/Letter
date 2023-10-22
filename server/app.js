@@ -13,21 +13,6 @@ app.use(
   cors({ credentials: true, origin: "https://letter-webapp.netlify.app" })
 );
 
-app.options(
-  "*",
-  cors({ credentials: true, origin: "https://letter-webapp.netlify.app" })
-);
-
-app.use((req, res, next) => {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://letter-webapp.netlify.app"
-  );
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  next();
-});
-
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 const authRoutes = require("./routes/auth");
