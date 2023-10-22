@@ -75,7 +75,7 @@ export default function Chat() {
     /** HELPER FUNCTIONS */
 
     function connectWebSocket(token){
-        const socket = new WebSocket('ws://127.0.0.1:4040')
+        const socket = new WebSocket('ws://letter-webserver.onrender.com')
         setWs(socket);
 
         socket.onopen = (event) => {
