@@ -15,7 +15,7 @@ const corsOptions = {
   credentials: true,
   origin: "https://letter-webapp.netlify.app",
 };
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
