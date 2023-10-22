@@ -26,7 +26,10 @@ const PORT = process.env.PORT || 3000;
 
 const server = https
   .createServer(
-    { key: fs.readFileSync("key.pem"), cert: fs.readFileSync("cert.pem") },
+    {
+      key: fs.readFileSync("secure_key.pem"),
+      cert: fs.readFileSync("secure_cert.pem"),
+    },
     app
   )
   .listen(PORT, () => {
